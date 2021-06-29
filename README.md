@@ -4,5 +4,4 @@
 
 # Installation
   1. Put this script to your resources
-  2. Import SQL file to your database.
-  3. Add `ensure fgs_bikes` to your server.cfg
+  2. Add `ensure fgs_bikes` to your server.cfg
