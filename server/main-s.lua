@@ -8,7 +8,7 @@ AddEventHandler('fgs-bikes:rental', function(label, value, price)
     local _src = source
     local xPlayer = ESX.GetPlayerFromId(_src)
     if xPlayer then
-        if doesPlayerHaveEnoughMoney(_src, price) then 
+        if (xPlayer.getMoney() - price) >= price then 
             if canRentBike(_src) then
                 xPlayer.removeMoney(price)
                 table.insert(rentedBikes, { id = _src, bike = value })
@@ -34,19 +34,10 @@ end)
 -- Thanks to Strin for posting. ❤
 -- https://fivem-dev.cz/index.php?/topic/1592-z%C3%A1klady-lua-skriptov%C3%A1n%C3%AD-ve-fivem/
 function canRentBike(id)
-    if rentedBikes[id] then
-        return false
-    else
+    if not rentedBikes[id] then
         return true
     end
-end
-
-function doesPlayerHaveEnoughMoney(id, price)
-    local xPlayer = ESX.GetPlayerFromId(id)
-    if (xPlayer.getMoney() - price) < 0 then
-        return false
-    end
-    return true
+    return false
 end
 
 function isPlayerNearBikeRental(id)
