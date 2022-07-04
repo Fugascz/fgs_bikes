@@ -1,6 +1,6 @@
 # Requirements:
 * ESX
-* [mythic_notify](https://github.com/JayMontana36/mythic_notify)
+* [ox_lib](https://github.com/overextended/ox_lib)
 
 # Installation
   1. Put this script to your resources

@@ -1,13 +1,20 @@
-fx_version 'adamant'
+fx_version 'cerulean'
 game 'gta5'
+lua54 'yes'
+
+author 'Fugas'
+description 'Bike rental'
+
+shared_scripts {
+    '@ox_lib/init.lua',
+    '@es_extended/imports.lua',
+    'config.lua'
+}
 
 client_scripts {
-    'config.lua',
     'client/*.lua'
 }
 
 server_scripts {
-    '@mysql-async/lib/MySQL.lua',
-    'config.lua',
     'server/*.lua'
 }

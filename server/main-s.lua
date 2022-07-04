@@ -1,75 +1,60 @@
-ESX = nil
-TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
+rentedBikes = {}
 
-local rentedBikes = {}
+AddEventHandler('playerDropped', function()
+    local _src = source
 
-RegisterNetEvent('fgs-bikes:rental')
-AddEventHandler('fgs-bikes:rental', function(label, value, price)
+    if rentedBikes[_src] then
+        rentedBikes[_src] = nil
+    end
+end)
+
+RegisterNetEvent('fgs-bikes:rental', function(label, value, price)
     local _src = source
     local xPlayer = ESX.GetPlayerFromId(_src)
+
     if xPlayer then
-        if (xPlayer.getMoney() - price) >= price then 
-            if canRentBike(_src) then
-                xPlayer.removeMoney(price)
-                table.insert(rentedBikes, { id = _src, bike = value })
-                TriggerClientEvent('mythic_notify:client:SendAlert', _src, {type = 'success', text = string.format('Zapůjčil/a jste si %s za %s$.', value, price) })
-                TriggerClientEvent('fgs-bikes:spawnCar', _src, value)
-                bikesLog(string.format('**%s (%s)**', GetPlayerName(_src), xPlayer.getIdentifier()), string.format('Zapůjčil/a: **%s**\nSpawn kód: **%s**\n Za: **%s$**', value, value, price))
-            else 
-                TriggerClientEvent('mythic_notify:client:SendAlert', _src, { type = 'Error', text = 'Nemůžeš si půjčit další kolo!' })
+        if isNear(_src) then
+            if (xPlayer.getMoney() - price) >= price then
+                if canRentBike(_src) then
+                    xPlayer.removeMoney(price)
+                    spawnVehicle(_src, value)
+
+                    notify(_src, string.format('Zapůjčil/a jste si %s za %s$.', label, price))
+
+                    bikesLog(
+                        string.format('**%s (%s)**', GetPlayerName(_src), xPlayer.getIdentifier()),
+                        string.format('Zapůjčil/a: **%s**\nSpawn kód: **%s**\n Za: **%s$**', value, value, price)
+                    )
+                else
+                    notify(_src, 'Nemůžeš si půjčit další kolo!')
+                end
+            else
+                notify(_src, 'Nemáš dostatek peněz!')
             end
-        else 
-            TriggerClientEvent('mythic_notify:client:SendAlert', _src, { type = 'Error', text = 'Nemáš dostatek peněz!' })
         end
     end
 end)
 
-AddEventHandler('playerDropped', function (source)
-    if rentedBikes[source] then
-        rentedBikes[source] = nil
+RegisterNetEvent('fgs-bikes:returnBike', function()
+    local _src = source
+    local xPlayer = ESX.GetPlayerFromId(_src)
+
+    if rentedBikes[_src] then
+        local playerPed = GetPlayerPed(_src)
+        local playerVehicle = GetVehiclePedIsIn(playerPed, false)
+        local rentedBike = rentedBikes[_src]
+
+        if playerVehicle == rentedBike then
+            DeleteEntity(rentedBike)
+            rentedBikes[_src] = nil
+
+            xPlayer.addAccountMoney('money', 100)
+
+            notify(_src, 'Vrátil/a jsi zapůjčené kolo. Záloha ti byla vrácena')
+        else
+            notify(_src, 'Nesedíš na zapůjčeném kole..')
+        end
+    else
+        notify(_src, 'Nemáš zapůjčené žádné kolo!')
     end
 end)
-
--- Functions doesPlayerHaveEnoughMoney and isPlayerNearBikeRental is from fivem-dev.cz for secure scripts and learn FiveM programming.
--- Thanks to Strin for posting. ❤
--- https://fivem-dev.cz/index.php?/topic/1592-z%C3%A1klady-lua-skriptov%C3%A1n%C3%AD-ve-fivem/
-function canRentBike(id)
-    if not rentedBikes[id] then
-        return true
-    end
-    return false
-end
-
-function isPlayerNearBikeRental(id)
-    if Config.OneSync then
-        local ped = GetPlayerPed(id)
-        local coords = GetEntityCoords(ped)
-        local distanceToShop = 100
-
-        for k,v in pairs(Config.Zones) do
-            local distance = #(coords - vector3(v.Pos.x, v.Pos.y, v.Pos.z))
-            if distance < distanceToShop then
-                distanceToShop = distance
-            end
-            if distanceToShop > 10 then
-                return false
-            end
-        end
-    end
-    return true
-end
-
-function bikesLog(title, msg)
-    local connect = {
-        {
-            ["color"] = 9699539,
-            ["title"] = title,
-            ["description"] = msg,
-            ["footer"] = {
-                ["text"] = 'fgs_bikes | ' .. os.date('%H:%M - %d. %m. %Y', os.time()),
-                ["icon_url"] = Config.Webhook.Icon,
-            },
-        }
-    }
-    PerformHttpRequest(Config.Webhook.Link, function(err, text, headers) end, 'POST', json.encode({username = 'BIKES', embeds = connect}), { ['Content-Type'] = 'application/json' })
-end
